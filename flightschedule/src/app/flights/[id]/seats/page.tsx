@@ -75,10 +75,11 @@ export default function SeatsPage() {
           table: "seats",
           filter: `flight_id=eq.${flightId}`,
         },
-        (payload) => {
+        (payload: any) => {
+          const newSeat = payload.new as Seat;
           setSeats((prev) =>
             prev.map((seat) =>
-              seat.id === payload.new.id ? { ...seat, ...payload.new } : seat,
+              seat.id === newSeat.id ? { ...seat, ...newSeat } : seat,
             ),
           );
         },

@@ -71,7 +71,7 @@ export async function reserveSeat(
   console.log("🔍 Attempting to reserve seat:", { flightId, seatId, userId });
 
   // First check if seat exists and is available
-  const { data: seatData, error: checkError } = await supabase
+  const { data: seatData, error: checkError } = await (supabase as any)
     .from("seats")
     .select("*")
     .eq("id", seatId)
@@ -85,13 +85,14 @@ export async function reserveSeat(
     return false;
   }
 
-  if (seatData.status !== "available") {
-    console.error("❌ Seat not available, status:", seatData.status);
+  const seat = seatData as any;
+  if (seat.status !== "available") {
+    console.error("❌ Seat not available, status:", seat.status);
     return false;
   }
 
   // Now update the seat
-  const { data: updateData, error: updateError } = await supabase
+  const { data: updateData, error: updateError } = await (supabase as any)
     .from("seats")
     .update({ status: "reserved", user_id: userId })
     .eq("id", seatId)
@@ -117,7 +118,7 @@ export async function createBooking(
     nationality: string;
     dateOfBirth: string;
   },
-) {
+): Promise<{ id: string; pnr: string; status: string; user_id: string; flight_id: string }> {
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
 
@@ -129,7 +130,7 @@ export async function createBooking(
   const pnr = "PNR" + Date.now().toString().slice(-6);
 
   // Create booking
-  const { data: bookingData, error: bookingError } = await supabase
+  const { data: bookingData, error: bookingError } = await (supabase as any)
     .from("bookings")
     .insert({
       user_id: userData.user.id,
@@ -145,8 +146,12 @@ export async function createBooking(
     throw bookingError;
   }
 
+  if (!bookingData) {
+    throw new Error("Failed to create booking");
+  }
+
   // Add passenger
-  const { error: passengerError } = await supabase.from("passengers").insert({
+  const { error: passengerError } = await (supabase as any).from("passengers").insert({
     booking_id: bookingData.id,
     name: passengerDetails.name,
     passport_number: passengerDetails.passportNumber,
@@ -160,7 +165,7 @@ export async function createBooking(
   }
 
   // Update seat status to booked
-  const { error: seatError } = await supabase
+  const { error: seatError } = await (supabase as any)
     .from("seats")
     .update({ status: "booked" })
     .eq("seat_number", selectedSeat)
@@ -223,7 +228,7 @@ export async function getUserBookings(userId: string) {
 export async function cancelBooking(bookingId: string) {
   const supabase = createClient();
 
-  const { data, error } = await supabase.rpc("cancel_booking", {
+  const { data, error } = await (supabase as any).rpc("cancel_booking", {
     p_booking_id: bookingId,
   });
 
@@ -242,7 +247,7 @@ export async function createReschedule(
 ) {
   const supabase = createClient();
 
-  const { data: booking } = await supabase
+  const { data: booking } = await (supabase as any)
     .from("bookings")
     .select("flight_id")
     .eq("id", bookingId)
@@ -252,7 +257,7 @@ export async function createReschedule(
     throw new Error("Booking not found");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("reschedules")
     .insert({
       booking_id: bookingId,
@@ -269,7 +274,7 @@ export async function createReschedule(
   }
 
   // Update booking flight
-  const { error: updateError } = await supabase
+  const { error: updateError } = await (supabase as any)
     .from("bookings")
     .update({
       flight_id: newFlightId,

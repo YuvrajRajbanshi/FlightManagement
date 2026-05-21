@@ -54,17 +54,18 @@ export default function ReschedulePage() {
         setLoading(true);
         const data = await getBookingWithDetails(bookingId);
         if (data) {
-          setBooking(data as unknown as BookingDetails);
+          const booking = data as unknown as BookingDetails;
+          setBooking(booking);
 
           // Search for alternative flights
           const flights = await searchFlights(
-            data.flights.origin,
-            data.flights.destination,
-            new Date(data.flights.departure_time).toISOString().split("T")[0],
+            booking.flights.origin,
+            booking.flights.destination,
+            new Date(booking.flights.departure_time).toISOString().split("T")[0],
           );
           setAvailableFlights(
             flights.filter(
-              (f: any) => f.id !== data.flights.id,
+              (f: any) => f.id !== booking.flights.id,
             ) as AvailableFlight[],
           );
         } else {
